@@ -1,0 +1,9 @@
+Where stuff to be done goes
+[] pawn move for black side
+[] pawn cannot 
+[] move for knight
+[] move for rook
+[] move for bishop
+[] move for queen
+[] move for king
+[] isKingChecked
