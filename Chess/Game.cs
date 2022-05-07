@@ -1,5 +1,11 @@
 using System;
 
+/*
+    The board is a 9x9 array with the 0-indexes unused.
+    First entry (1, .) is vertical and second entry is horizontal.
+    (2, 5) to (4, 5) would then correspond to E2 to E4.
+*/
+
 public class Game {
     Piece[,] board;
     int currentTurn;
@@ -33,6 +39,17 @@ public class Game {
         return;
     }
 
+    // custom board setup for testing or
+    // playing a game from a certain position
+    public void setupBoard(Piece[] pieces, (int, int)[] coordinates) {
+        if (pieces.Length != coordinates.Length) return; 
+        board = new Piece[9,9];
+        for (int i = 0 ; i < pieces.Length ; i++) {
+            board[coordinates[i].Item1, coordinates[i].Item2] = pieces[i];
+        }
+        return;
+    }
+
     public int getTurn() {
         return currentTurn;
     }
@@ -42,6 +59,7 @@ public class Game {
     }
 
     public void movePiece((int, int) from, (int, int) to) {
+        
         if (isMoveLegal(from, to)) {
             board[to.Item1, to.Item2] = board[from.Item1, from.Item2];
             board[from.Item1, from.Item2] = null;
@@ -51,9 +69,12 @@ public class Game {
     }
 
     public bool isMoveLegal((int, int) from, (int, int) to) {
-        if (board[from.Item1, from.Item2] == null) return false;
-        if ((8 < to.Item1 && to.Item1 < 0) || (8 < to.Item2 && to.Item2 < 0)) return false;
-        switch (board[from.Item1, from.Item2].getType()) {
+        Piece piece = board[from.Item1, from.Item2];
+        if (piece == null) return false;
+        if ((to.Item1 < 1 && 8 < to.Item1) || (to.Item2 < 1 && 8 < to.Item2)) return false;
+        if (getTurn() != piece.getSide()) return false; // cannot move opponents piece
+        if (board[to.Item1, to.Item2] != null && board[to.Item1, to.Item2].getSide() == getTurn()) return false;
+        switch (piece.getType()) {
             case "King": return moveKingLegal(from, to);
             case "Queen": return moveQueenLegal(from, to);
             case "Bishop": return moveBishopLegal(from, to);
@@ -69,7 +90,6 @@ public class Game {
     }
 
     static public void Main(string[] args) {
-        Piece noPiece = null;
         Game game = new Game();
         Console.WriteLine("Nobody won yet");
         game.movePiece((2, 2), (4, 2));
@@ -92,31 +112,46 @@ public class Game {
     }
 
     public bool moveRookLegal((int, int) from, (int, int) to) {
-        if (!(from.Item1 == to.Item1 || from.Item2 == to.Item2)) return false;
+        bool moveIsVertical = from.Item1 == to.Item1;
+        bool moveIsHorizontal = from.Item2 == to.Item2;
+        if (!(moveIsVertical || moveIsHorizontal)) return false;
+        if (moveIsVertical) {
+            
+        } else if (moveIsVertical) {
+
+        }
 
         return false;
     }
 
     public bool movePawnLegal((int, int) from, (int, int) to) {
         Piece piece = board[from.Item1, from.Item2];
-        int side = piece.getSide();
         bool destIsEmpty = board[to.Item1, to.Item2] == null;
-        if (side == 1) {
+        if (piece.getSide() == 1) {
             int verticalMoveDistance = to.Item1 - from.Item1; 
-            if ((1 > verticalMoveDistance && verticalMoveDistance > 2) && to.Item2 == from.Item2) {
+            if (!(verticalMoveDistance < 1 && 2 < verticalMoveDistance) && to.Item2 == from.Item2) {
                 return (destIsEmpty && board[from.Item1 + 1, from.Item2] == null);
             }
             else if (destIsEmpty) return false; // cannot move to other squares if not attacking
             else if (to.Item1 == from.Item1 + 1 && 
                     (to.Item2 == from.Item2 - 1 || to.Item2 == from.Item2 + 1)) {
-                return (side != board[to.Item1, to.Item2].getSide()); // can attack non-allies diagonally 
+                return true; // can attack non-allies diagonally 
             } else {
                 return false;
             }
         } else {
-            
+            int verticalMoveDistance = from.Item1 - to.Item1; 
+            if (!(verticalMoveDistance < 1 && 2 < verticalMoveDistance) && to.Item2 == from.Item2) {
+                return (destIsEmpty && board[from.Item1 - 1, from.Item2] == null);
+            }
+            else if (destIsEmpty) return false; // cannot move to other squares if not attacking
+            else if (to.Item1 == from.Item1 - 1 && 
+                    (to.Item2 == from.Item2 - 1 || to.Item2 == from.Item2 + 1)) {
+                return true; // can attack non-allies diagonally 
+            } else {
+                return false;
+            }
         }
-        return false;
     }
 }
 
