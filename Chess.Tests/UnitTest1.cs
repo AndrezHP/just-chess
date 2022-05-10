@@ -1,4 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System;
 namespace Chess.Tests;
 
 [TestClass]
@@ -16,6 +17,13 @@ public class UnitTest1 {
         Game game = new Game();
         bool isMoveLegal = game.isMoveLegal((4, 4), (5, 5));
         Assert.IsFalse(isMoveLegal, "You cannot move nothing");
+    }
+
+    [TestMethod]
+    public void CannotMoveToCurrentLocation() {
+        Game game = new Game();
+        bool isLegalMove = game.isMoveLegal((2, 2), (2, 2));
+        Assert.IsFalse(isLegalMove, "Pawn cannot move to current location");
     }
 
     [TestMethod]
@@ -128,5 +136,82 @@ public class UnitTest1 {
         Assert.IsTrue(pawnIsNowWhite, "White should have taken and replaced this pawn");
     }
 
+    [TestMethod]
+    public void RookCannotMoveDiagonally() {
+        Game game = new Game();
+        Piece rook = new Piece("Rook", 1);
+        game.cleanBoard();
+        game.setPiece(rook, (5, 5));
 
+        bool firstMoveIsLegal = game.isMoveLegal((5, 5), (7, 7));
+        Assert.IsFalse(firstMoveIsLegal, "Illegal diagonal rook move");
+        bool secondMoveIsLegal = game.isMoveLegal((5, 5), (3, 4));
+        Assert.IsFalse(secondMoveIsLegal, "Also illegal diagonal rook move");
+    }
+
+    [TestMethod]
+    public void RookCanMoveStraight() {
+        Game game = new Game();
+        Piece rook = new Piece("Rook", 1);
+        game.cleanBoard();
+        game.setPiece(rook, (5, 5));
+
+        bool firstMoveIsLegal = game.isMoveLegal((5, 5), (5, 8));
+        bool secondMoveIsLegal = game.isMoveLegal((5, 5), (1, 5));
+        Assert.IsTrue(firstMoveIsLegal, "This rook move should be legal");
+        Assert.IsTrue(secondMoveIsLegal, "This rook move should also be legal");
+    }
+
+    [TestMethod]
+    public void RooksCannotJumpOverPawn() {
+        Game game = new Game();
+        Assert.IsTrue(game.getBoard()[1,1].getType().Equals("Rook"), "This piece should be a rook");
+
+        bool firstMoveIsLegal = game.isMoveLegal((1, 1), (5, 1));
+        bool secondMoveIsLegal = game.isMoveLegal((1, 8), (6, 8));
+        Assert.IsFalse(firstMoveIsLegal, "Rooks cannot jump over pawns");
+        Assert.IsFalse(secondMoveIsLegal, "Rooks cannot jump over pawns here either");
+    }
+
+    [TestMethod]
+    public void RookCannotJumpOverEnemyHorizontally() {
+        Game game = new Game();
+        Piece rook = new Piece("Rook", 1);
+        game.setPiece(rook, (5, 5));
+        Piece pawn = new Piece("Pawn", 0);
+        game.setPiece(pawn, (5, 6));
+
+        bool isMoveLegal = game.isMoveLegal((5, 5), (5, 8));
+        Assert.IsFalse(isMoveLegal, "Rooks cannot jump over pieces horizontally either");
+    }
+
+    [TestMethod]
+    public void IllegalKingMoves() {
+        Game game = new Game();
+        game.cleanBoard();
+        Piece king = new Piece("King", 1);
+        game.setPiece(king, (5, 5));
+
+        bool move1Legal = game.isMoveLegal((5, 5), (5, 7));
+        bool move2Legal = game.isMoveLegal((5, 5), (3, 7));
+        bool move3Legal = game.isMoveLegal((5, 5), (3, 5));
+        bool move4Legal = game.isMoveLegal((5, 5), (4, 3));
+        bool move5Legal = game.isMoveLegal((5, 5), (8, 7));
+        Assert.IsFalse(move1Legal || move2Legal || move3Legal || move4Legal || move5Legal, "These should all be illegal moves");
+    }
+
+    [TestMethod]
+    public void LegalKingMoves() {
+        Game game = new Game();
+        game.cleanBoard();
+        Piece king = new Piece("King", 1);
+        game.setPiece(king, (5, 5));
+
+        bool move1Legal = game.isMoveLegal((5, 5), (6, 6));
+        bool move2Legal = game.isMoveLegal((5, 5), (4, 4));
+        bool move3Legal = game.isMoveLegal((5, 5), (4, 5));
+        bool move4Legal = game.isMoveLegal((5, 5), (5, 4));
+        bool move5Legal = game.isMoveLegal((5, 5), (6, 4));
+        Assert.IsTrue(move1Legal && move2Legal && move3Legal && move4Legal && move5Legal, "These should all be illegal moves");
+    }
 }

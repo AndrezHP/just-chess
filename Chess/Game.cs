@@ -9,7 +9,7 @@ using System;
 public class Game {
     Piece[,] board;
     int currentTurn;
-
+    
     public Game() {
         board = new Piece[9,9];
         // init pawns
@@ -50,6 +50,15 @@ public class Game {
         return;
     }
 
+    public void setPiece(Piece piece, (int, int) coordinate) {
+        board[coordinate.Item1, coordinate.Item2] = piece;
+    }
+
+    public void cleanBoard() {
+        board = new Piece[9,9];
+    }
+
+
     public int getTurn() {
         return currentTurn;
     }
@@ -59,7 +68,6 @@ public class Game {
     }
 
     public void movePiece((int, int) from, (int, int) to) {
-        
         if (isMoveLegal(from, to)) {
             board[to.Item1, to.Item2] = board[from.Item1, from.Item2];
             board[from.Item1, from.Item2] = null;
@@ -70,8 +78,9 @@ public class Game {
 
     public bool isMoveLegal((int, int) from, (int, int) to) {
         Piece piece = board[from.Item1, from.Item2];
-        if (piece == null) return false;
-        if ((to.Item1 < 1 && 8 < to.Item1) || (to.Item2 < 1 && 8 < to.Item2)) return false;
+        if (piece == null) return false; // cannot move nothing 
+        if (from == to) return false; // cannot move to the same square
+        if ((to.Item1 < 1 && 8 < to.Item1) || (to.Item2 < 1 && 8 < to.Item2)) return false; // cannot move outside the board
         if (getTurn() != piece.getSide()) return false; // cannot move opponents piece
         if (board[to.Item1, to.Item2] != null && board[to.Item1, to.Item2].getSide() == getTurn()) return false;
         switch (piece.getType()) {
@@ -96,6 +105,13 @@ public class Game {
     }
 
     public bool moveKingLegal((int, int) from, (int, int) to) {
+        for (int i = -1 ; i <= 1 ; i++) {
+            for (int j = -1 ; j <= 1 ; j++) {
+                if ((from.Item1 + i, from.Item2 + j) == to) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -112,15 +128,39 @@ public class Game {
     }
 
     public bool moveRookLegal((int, int) from, (int, int) to) {
-        bool moveIsVertical = from.Item1 == to.Item1;
-        bool moveIsHorizontal = from.Item2 == to.Item2;
+        bool moveIsVertical = from.Item2 == to.Item2;
+        bool moveIsHorizontal = from.Item1 == to.Item1;
         if (!(moveIsVertical || moveIsHorizontal)) return false;
+
         if (moveIsVertical) {
-            
-        } else if (moveIsVertical) {
-
+            int distance = to.Item1 - from.Item1;
+            bool freePath = true;
+            if (distance > 0) {
+                for (int i = from.Item1 + 1 ; i < to.Item1 ; i++) {
+                    Console.WriteLine(i);
+                    if (board[i, from.Item2] != null) freePath = false;
+                }
+            } else {
+                for (int i = from.Item1 - 1 ; i > to.Item1 ; i--) {
+                    if (board[i, from.Item2] != null) freePath = false;
+                }
+            }
+            return freePath;
+        } 
+        else if (moveIsHorizontal) {
+            int distance = to.Item2 - from.Item2;
+            bool freePath = true;
+            if (distance > 0) {
+                for (int i = from.Item2 + 1 ; i < to.Item2 ; i++) {
+                    if (board[from.Item1, i] != null) freePath = false;
+                }
+            } else {
+                for (int i = from.Item2 - 1 ; i > to.Item2 ; i--) {
+                    if (board[from.Item1, i] != null) freePath = false;
+                }
+            }
+            return freePath;
         }
-
         return false;
     }
 
