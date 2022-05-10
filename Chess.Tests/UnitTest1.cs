@@ -10,6 +10,8 @@ public class UnitTest1 {
         Assert.IsTrue(game.getTurn() == 1, "Turn should be 1 in the start");
         game.changeTurn();
         Assert.IsTrue(game.getTurn() == 0, "Turn should be 0 after turn change");
+        game.changeTurn();
+        Assert.IsTrue(game.getTurn() == 1, "Turn should be 1 after two turn changes");
     }
 
     [TestMethod]
@@ -24,6 +26,13 @@ public class UnitTest1 {
         Game game = new Game();
         bool isLegalMove = game.isMoveLegal((2, 2), (2, 2));
         Assert.IsFalse(isLegalMove, "Pawn cannot move to current location");
+    }
+
+    [TestMethod]
+    public void TurnChangeOnLegalMove() {
+        Game game= new Game();
+        game.movePiece((2, 4), (4, 4));
+        Assert.IsTrue(game.getTurn() == 0, "Turn should have changed on move");
     }
 
     [TestMethod]
@@ -197,7 +206,7 @@ public class UnitTest1 {
         bool move3Legal = game.isMoveLegal((5, 5), (3, 5));
         bool move4Legal = game.isMoveLegal((5, 5), (4, 3));
         bool move5Legal = game.isMoveLegal((5, 5), (8, 7));
-        Assert.IsFalse(move1Legal || move2Legal || move3Legal || move4Legal || move5Legal, "These should all be illegal moves");
+        Assert.IsFalse(move1Legal || move2Legal || move3Legal || move4Legal || move5Legal, "These should all be illegal king moves");
     }
 
     [TestMethod]
@@ -212,6 +221,85 @@ public class UnitTest1 {
         bool move3Legal = game.isMoveLegal((5, 5), (4, 5));
         bool move4Legal = game.isMoveLegal((5, 5), (5, 4));
         bool move5Legal = game.isMoveLegal((5, 5), (6, 4));
-        Assert.IsTrue(move1Legal && move2Legal && move3Legal && move4Legal && move5Legal, "These should all be illegal moves");
+        Assert.IsTrue(move1Legal && move2Legal && move3Legal && move4Legal && move5Legal, "These should all be legal king moves");
     }
+    
+    [TestMethod]
+    public void IllegalKnightMoves() {
+        Game game = new Game();
+
+        bool move1Legal = game.isMoveLegal((1, 2), (3, 2));
+
+        game.cleanBoard();
+        Piece knight = new Piece("Knight", 1);
+        game.setPiece(knight, (5, 5));
+
+        bool move2Legal = game.isMoveLegal((5, 5), (3, 3));
+        bool move3Legal = game.isMoveLegal((5, 5), (6, 6));
+        bool move4Legal = game.isMoveLegal((5, 5), (5, 7));
+        bool move5Legal = game.isMoveLegal((5, 5), (8, 8));
+
+        Assert.IsFalse(move1Legal || move2Legal || move3Legal || move4Legal || move5Legal, "These should all be illegal knight moves");
+    }
+
+    [TestMethod]
+    public void LegalKnightMoves() {
+        Game game = new Game();
+
+        bool move1Legal = game.isMoveLegal((1, 2), (3, 1));
+        bool move2Legal = game.isMoveLegal((1, 2), (3, 3));
+        game.changeTurn();
+        bool move3Legal = game.isMoveLegal((8, 2), (6, 3));
+        game.changeTurn();
+
+        game.cleanBoard();
+        Piece knight = new Piece("Knight", 1);
+        game.setPiece(knight, (5, 5));
+
+        bool move4Legal = game.isMoveLegal((5, 5), (3, 6));
+        bool move5Legal = game.isMoveLegal((5, 5), (4, 3));
+
+        Assert.IsTrue(move1Legal && move2Legal && move3Legal && move4Legal && move5Legal, "These should all be legal knight moves");
+    }
+
+    [TestMethod]
+    public void IllegalBishopMoves() {
+        Game game = new Game();
+
+        bool move1Legal = game.isMoveLegal((1, 2), (3, 2));
+
+        game.cleanBoard();
+        Piece bishop = new Piece("Bishop", 1);
+        game.setPiece(bishop, (5, 5));
+
+        bool move2Legal = game.isMoveLegal((5, 5), (3, 2));
+        bool move3Legal = game.isMoveLegal((5, 5), (7, 6));
+
+        game.setPiece(new Piece("Pawn", 1), (6, 6));
+        game.setPiece(new Piece("Knight", 0), (4, 4)); // testing that it cannot jump over pieces
+        bool move4Legal = game.isMoveLegal((5, 5), (7, 7));
+        bool move5Legal = game.isMoveLegal((5, 5), (3, 3));
+
+        Assert.IsFalse(move1Legal || move2Legal || move3Legal || move4Legal || move5Legal, "These should all be illegal bishop moves");
+    }
+
+    [TestMethod]
+    public void LegalBishopMoves() {
+        Game game = new Game();
+        game.movePiece((2, 5), (4, 5));
+        game.changeTurn();
+        bool move1Legal = game.isMoveLegal((1, 6), (4, 3));
+        bool move2Legal = game.isMoveLegal((1, 6), (6, 1));
+
+        game.cleanBoard();
+        Piece bishop = new Piece("Bishop", 1);
+        game.setPiece(bishop, (5, 5));
+
+        bool move3Legal = game.isMoveLegal((5, 5), (7, 3));
+        bool move4Legal = game.isMoveLegal((5, 5), (8, 8));
+        bool move5Legal = game.isMoveLegal((5, 5), (1, 1));
+
+        Assert.IsTrue(move1Legal && move2Legal && move3Legal && move4Legal && move5Legal, "These should all be legal bishop moves");
+    }
+    
 }

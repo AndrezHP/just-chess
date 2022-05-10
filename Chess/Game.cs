@@ -9,7 +9,7 @@ using System;
 public class Game {
     Piece[,] board;
     int currentTurn;
-    
+
     public Game() {
         board = new Piece[9,9];
         // init pawns
@@ -27,14 +27,14 @@ public class Game {
         board[1, 4] = new Piece("Queen", 1);
         board[1, 5] = new Piece("King", 1);
         // init black side
-        board[8, 1] = new Piece("Rook", 1);
-        board[8, 8] = new Piece("Rook", 1);
-        board[8, 2] = new Piece("Knight", 1);
-        board[8, 7] = new Piece("Knight", 1);
-        board[8, 3] = new Piece("Bishop", 1);
-        board[8, 6] = new Piece("Bishop", 1);
-        board[8, 4] = new Piece("Queen", 1);
-        board[8, 5] = new Piece("King", 1);
+        board[8, 1] = new Piece("Rook", 0);
+        board[8, 8] = new Piece("Rook", 0);
+        board[8, 2] = new Piece("Knight", 0);
+        board[8, 7] = new Piece("Knight", 0);
+        board[8, 3] = new Piece("Bishop", 0);
+        board[8, 6] = new Piece("Bishop", 0);
+        board[8, 4] = new Piece("Queen", 0);
+        board[8, 5] = new Piece("King", 0);
         currentTurn = 1;
         return;
     }
@@ -81,7 +81,7 @@ public class Game {
         if (piece == null) return false; // cannot move nothing 
         if (from == to) return false; // cannot move to the same square
         if ((to.Item1 < 1 && 8 < to.Item1) || (to.Item2 < 1 && 8 < to.Item2)) return false; // cannot move outside the board
-        if (getTurn() != piece.getSide()) return false; // cannot move opponents piece
+        if (currentTurn != piece.getSide()) return false; // cannot move opponents piece
         if (board[to.Item1, to.Item2] != null && board[to.Item1, to.Item2].getSide() == getTurn()) return false;
         switch (piece.getType()) {
             case "King": return moveKingLegal(from, to);
@@ -116,15 +116,45 @@ public class Game {
     }
 
     public bool moveQueenLegal((int, int) from, (int, int) to) {
-        return false;
+        if (moveRookLegal(from, to)) return true;
+        else return moveBishopLegal(from, to);
     }
 
     public bool moveBishopLegal((int, int) from, (int, int) to) {
-        return false;
+        int index = 0;
+        (int, int) signs = (0, 0);
+        for (int i = 1 ; i < 8 ; i++) {
+            if ((from.Item1 + i, from.Item2 + i) == to) {index = i ; signs = (1, 1); Console.WriteLine(currentTurn);}
+            else if ((from.Item1 + i, from.Item2 - i) == to) {index = i ; signs = (1, -1); Console.WriteLine(currentTurn);}
+            else if ((from.Item1 - i, from.Item2 + i) == to) {index = i ; signs = (-1, 1); Console.WriteLine(currentTurn);}
+            else if ((from.Item1 - i, from.Item2 - i) == to) {index = i ; signs = (-1, -1); Console.WriteLine(currentTurn);}
+        }
+        if (index == 0) return false;
+
+        bool freePath = true;
+        for (int i = 1 ; i < index ; i++) {
+            (int, int) pos = (from.Item1 + (signs.Item1 * i), from.Item2 + (signs.Item2 * i));
+            Console.WriteLine(pos);
+            if (board[pos.Item1, pos.Item2] != null) {
+                freePath = false; Console.WriteLine("Oh no");
+            }
+        }
+        return freePath;
     }
 
     public bool moveKnightLegal((int, int) from, (int, int) to) {
+        (int, int)[] legalDistances = new (int, int)[] { (1, 2), (1, -2), (-1, 2), (-1, -2), (2, 1), (2, -1), (-2, 1), (-2, -1) };
+        foreach ((int, int) legalDistance in legalDistances) {
+            if (tupleAddition(from, legalDistance) == to) return true;
+        }
         return false;
+    }
+
+    private (int, int) tupleAddition((int, int) a, (int, int) b) {
+        (int, int) result;
+        result.Item1 = a.Item1 + b.Item1;
+        result.Item2 = a.Item2 + b.Item2;
+        return result;
     }
 
     public bool moveRookLegal((int, int) from, (int, int) to) {
