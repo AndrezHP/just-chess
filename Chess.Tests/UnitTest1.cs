@@ -302,4 +302,71 @@ public class UnitTest1 {
         Assert.IsTrue(move1Legal && move2Legal && move3Legal && move4Legal && move5Legal, "These should all be legal bishop moves");
     }
     
+    [TestMethod]
+    public void CannotMoveFromProtectingKing() {
+        Game game = new Game();
+        game.cleanBoard();
+        game.createAndSetPiece("King", 1, (1, 1));
+        game.createAndSetPiece("Rook", 1, (2, 1));
+        game.createAndSetPiece("Rook", 0, (8, 1));
+
+        game.printBoard();
+        game.movePiece((2, 1), (2, 2));
+        game.printBoard();
+        bool rookMoved = game.getBoard()[2, 2] != null;
+
+        Assert.IsFalse(rookMoved, "You cannot leave your king unprotected!");
+    }
+
+    [TestMethod]
+    public void TestUpdatePieceLocation() {
+        Game game = new Game();
+        game.cleanBoard();
+        game.createAndSetPiece("King", 1, (1, 1));
+        Piece king = game.getBoard()[1, 1];
+
+        bool kingAt11 = game.getKingPositionOf(1) == (1, 1);
+        bool kingInTable11 = game.getPiecesOf(1)[king].Equals((1, 1));
+
+        Assert.IsTrue(kingAt11, "king position is not setup correctly");
+        Assert.IsTrue(kingInTable11, "white king has wrong position in table");
+
+        game.movePiece((1, 1), (2, 2));
+
+        bool kingAt22 = game.getKingPositionOf(1) == (2, 2);
+        bool kingInTable22 = game.getPiecesOf(1)[king].Equals((2, 2));
+
+        Assert.IsTrue(kingAt22, "king position is not updated correctly");
+        Assert.IsTrue(kingInTable22, "white king in table is not updated correctly");
+    }
+
+    [TestMethod]
+    public void KingCannotMoveIntoDanger() {
+        Game game = new Game();
+        game.cleanBoard();
+        game.createAndSetPiece("King", 1, (1, 1));
+        game.createAndSetPiece("Rook", 0, (2, 2));
+
+        game.movePiece((1, 1), (1, 2));
+        bool kingMovedIntoDanger = game.getBoard()[1, 2] != null;
+        Assert.IsFalse(kingMovedIntoDanger, "You cannot lose your king!");
+
+        game.movePiece((1, 1), (2, 2));
+        bool kingCapturedRook = game.getBoard()[2, 2].getType() == "King";
+        Assert.IsTrue(kingCapturedRook, "The king should have captured");
+    }
+
+    [TestMethod]
+    public void PieceCannotMoveFromProtectingKing() {
+        Game game = new Game();
+        game.cleanBoard();
+        game.createAndSetPiece("King", 1, (1, 1));
+        game.createAndSetPiece("Bishop", 0, (8, 8));
+        game.createAndSetPiece("Pawn", 1, (2, 2));
+        
+        game.movePiece((2, 2), (3, 2));
+
+        bool pieceMoved = game.getBoard()[3, 2] != null;
+        Assert.IsFalse(pieceMoved, "The pawn should not have moved from the king");
+    }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 
 /*
     The board is a 9x9 array with the 0-indexes unused.
@@ -9,34 +10,52 @@ using System;
 public class Game {
     Piece[,] board;
     int currentTurn;
+    Hashtable whitePieces;
+    Hashtable blackPieces;
+    (int, int) whiteKingPosition;
+    (int, int) blackKingPosition;
 
     public Game() {
         board = new Piece[9,9];
+        currentTurn = 1;
+        whitePieces = new Hashtable();
+        blackPieces = new Hashtable();
         // init pawns
         for (int i = 1 ; i < 9; i++) {
-            board[2, i] = new Piece("Pawn", 1);
-            board[7, i] = new Piece("Pawn", 0);
+            createAndSetPiece("Pawn", 1, (2, i));
+            createAndSetPiece("Pawn", 0, (7, i));
         }
-        // init white side
-        board[1, 1] = new Piece("Rook", 1);
-        board[1, 8] = new Piece("Rook", 1);
-        board[1, 2] = new Piece("Knight", 1);
-        board[1, 7] = new Piece("Knight", 1);
-        board[1, 3] = new Piece("Bishop", 1);
-        board[1, 6] = new Piece("Bishop", 1);
-        board[1, 4] = new Piece("Queen", 1);
-        board[1, 5] = new Piece("King", 1);
+        // init white side;
+        createAndSetPiece("Rook", 1, (1, 1));
+        createAndSetPiece("Knight", 1, (1, 2));
+        createAndSetPiece("Bishop", 1, (1, 3));
+        createAndSetPiece("Queen", 1, (1, 4));
+        createAndSetPiece("King", 1, (1, 5));
+        createAndSetPiece("Bishop", 1, (1, 6));
+        createAndSetPiece("Knight", 1, (1, 7));
+        createAndSetPiece("Rook", 1, (1, 8));
         // init black side
-        board[8, 1] = new Piece("Rook", 0);
-        board[8, 8] = new Piece("Rook", 0);
-        board[8, 2] = new Piece("Knight", 0);
-        board[8, 7] = new Piece("Knight", 0);
-        board[8, 3] = new Piece("Bishop", 0);
-        board[8, 6] = new Piece("Bishop", 0);
-        board[8, 4] = new Piece("Queen", 0);
-        board[8, 5] = new Piece("King", 0);
-        currentTurn = 1;
+        createAndSetPiece("Rook", 0, (8, 1));
+        createAndSetPiece("Knight", 0, (8, 2));
+        createAndSetPiece("Bishop", 0, (8, 3));
+        createAndSetPiece("Queen", 0, (8, 4));
+        createAndSetPiece("King", 0, (8, 5));
+        createAndSetPiece("Bishop", 0, (8, 6));
+        createAndSetPiece("Knight", 0, (8, 7));
+        createAndSetPiece("Rook", 0, (8, 8));
         return;
+    }
+
+    public void printBoard() {
+        for (int i = 1 ; i <= 8 ; i++) {
+            for (int j = 1 ; j <= 8 ; j++) {
+                Piece piece = board[i, j];
+                if (piece != null) {
+                    Console.WriteLine(piece.getType() + " " + piece.getSide() + "(" + i + ", " + j + ")");
+                }
+            }
+        }
+        Console.WriteLine("\n");
     }
 
     // custom board setup for testing or
@@ -50,14 +69,30 @@ public class Game {
         return;
     }
 
+    public void createAndSetPiece(String type, int side, (int, int) coordinate) {
+        Piece piece = new Piece(type, side);
+        setPiece(piece, coordinate);
+    }
+
     public void setPiece(Piece piece, (int, int) coordinate) {
         board[coordinate.Item1, coordinate.Item2] = piece;
+        if (piece.getSide() == 1) {
+            if (piece.getType() == "King") whiteKingPosition = coordinate;
+            whitePieces.Add(piece, coordinate);
+        }
+        else {
+            if (piece.getType() == "King") blackKingPosition = coordinate;
+            blackPieces.Add(piece, coordinate);
+        }
     }
 
     public void cleanBoard() {
         board = new Piece[9,9];
+        whitePieces = new Hashtable();
+        blackPieces = new Hashtable();
+        whiteKingPosition = (0, 0);
+        blackKingPosition = (0, 0);
     }
-
 
     public int getTurn() {
         return currentTurn;
@@ -67,13 +102,67 @@ public class Game {
         return board;
     }
 
+    public Hashtable getPiecesOf(int side) {
+        if (side == 1) return whitePieces;
+        else return blackPieces;
+    }
+
+    public (int, int) getKingPositionOf(int side) {
+        if (side == 1) return whiteKingPosition;
+        else return blackKingPosition;
+    }
+
+    public bool currentTurnKingIsChecked() {
+        if (currentTurn == 1) {
+            foreach ((int, int) opponentPiece in blackPieces.Values) {
+                changeTurn(); // Change the turn to make opponent moves legal
+                bool isLegal = isMoveLegal(opponentPiece, whiteKingPosition);
+                changeTurn();
+                if (isLegal) return true;
+            }
+        } else {
+            foreach ((int, int) opponentPiece in whitePieces.Values) {
+                changeTurn();
+                bool isLegal = isMoveLegal(opponentPiece, blackKingPosition);
+                changeTurn();
+                if (isLegal) return true;
+            }
+        }
+        return false;
+    }
+
     public void movePiece((int, int) from, (int, int) to) {
+        Piece piece = board[from.Item1, from.Item2];
+        Piece savedPiece = board[to.Item1, to.Item2];
         if (isMoveLegal(from, to)) {
             board[to.Item1, to.Item2] = board[from.Item1, from.Item2];
             board[from.Item1, from.Item2] = null;
-            changeTurn();
+            if (piece.getType() == "King") updateKingPosition(to);
+            // you cannot make a move that puts your king in check
+            if (!currentTurnKingIsChecked()) {
+                // remove captured piece if there is any
+                if (savedPiece != null) removeCapturedPieceFromTable(savedPiece);
+                // update piece location
+                if (currentTurn == 1) whitePieces[piece] = to;
+                else blackPieces[piece] = to;
+                changeTurn();
+            } else { // else move the pieces back
+                if (piece.getType() == "King") updateKingPosition(from);
+                board[from.Item1, from.Item2] = piece;
+                board[to.Item1, to.Item2] = savedPiece;
+            }
         }
         return;
+    }
+
+    public void updateKingPosition((int, int) pos) {
+        if (currentTurn == 1) whiteKingPosition = pos;
+        else blackKingPosition = pos;
+    }
+
+    public void removeCapturedPieceFromTable(Piece piece) {
+        if (currentTurn == 1) blackPieces.Remove(piece);
+        else whitePieces.Remove(piece);
     }
 
     public bool isMoveLegal((int, int) from, (int, int) to) {
@@ -123,20 +212,19 @@ public class Game {
     public bool moveBishopLegal((int, int) from, (int, int) to) {
         int index = 0;
         (int, int) signs = (0, 0);
-        for (int i = 1 ; i < 8 ; i++) {
-            if ((from.Item1 + i, from.Item2 + i) == to) {index = i ; signs = (1, 1); Console.WriteLine(currentTurn);}
-            else if ((from.Item1 + i, from.Item2 - i) == to) {index = i ; signs = (1, -1); Console.WriteLine(currentTurn);}
-            else if ((from.Item1 - i, from.Item2 + i) == to) {index = i ; signs = (-1, 1); Console.WriteLine(currentTurn);}
-            else if ((from.Item1 - i, from.Item2 - i) == to) {index = i ; signs = (-1, -1); Console.WriteLine(currentTurn);}
+        for (int i = 1 ; i < 8 ; i++) { // check if move is diagonal and how far
+            if ((from.Item1 + i, from.Item2 + i) == to) { index = i ; signs = (1, 1); }
+            else if ((from.Item1 + i, from.Item2 - i) == to) { index = i ; signs = (1, -1); }
+            else if ((from.Item1 - i, from.Item2 + i) == to) { index = i ; signs = (-1, 1); }
+            else if ((from.Item1 - i, from.Item2 - i) == to) { index = i ; signs = (-1, -1); }
         }
         if (index == 0) return false;
 
         bool freePath = true;
         for (int i = 1 ; i < index ; i++) {
             (int, int) pos = (from.Item1 + (signs.Item1 * i), from.Item2 + (signs.Item2 * i));
-            Console.WriteLine(pos);
             if (board[pos.Item1, pos.Item2] != null) {
-                freePath = false; Console.WriteLine("Oh no");
+                freePath = false;
             }
         }
         return freePath;
@@ -167,7 +255,6 @@ public class Game {
             bool freePath = true;
             if (distance > 0) {
                 for (int i = from.Item1 + 1 ; i < to.Item1 ; i++) {
-                    Console.WriteLine(i);
                     if (board[i, from.Item2] != null) freePath = false;
                 }
             } else {
