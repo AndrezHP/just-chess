@@ -14,6 +14,8 @@ public class Game {
     Hashtable blackPieces;
     (int, int) whiteKingPosition;
     (int, int) blackKingPosition;
+    bool gameover;
+    int gameConclusion;
 
     public Game() {
         board = new Piece[9,9];
@@ -43,6 +45,8 @@ public class Game {
         createAndSetPiece("Bishop", 0, (8, 6));
         createAndSetPiece("Knight", 0, (8, 7));
         createAndSetPiece("Rook", 0, (8, 8));
+        gameover = false;
+        gameConclusion = -1;
         return;
     }
 
@@ -112,6 +116,19 @@ public class Game {
         else return blackKingPosition;
     }
 
+    public bool isGameOver() {
+        return gameover;
+    }
+
+    public string getGameConclusion() {
+        switch (gameConclusion) {
+            case 0: return "Black won";
+            case 1: return "White won";
+            case 2: return "Stalemate";
+            default: return "Game is not over yet";
+        }
+    }
+
     public bool currentTurnKingIsChecked() {
         if (currentTurn == 1) {
             foreach ((int, int) opponentPiece in blackPieces.Values) {
@@ -132,27 +149,65 @@ public class Game {
     }
 
     public void movePiece((int, int) from, (int, int) to) {
+        if (gameover) {
+            Console.WriteLine("The Game Is Already Over");
+            return;
+        }
         Piece piece = board[from.Item1, from.Item2];
         Piece savedPiece = board[to.Item1, to.Item2];
         if (isMoveLegal(from, to)) {
             board[to.Item1, to.Item2] = board[from.Item1, from.Item2];
             board[from.Item1, from.Item2] = null;
             if (piece.getType() == "King") updateKingPosition(to);
-            // you cannot make a move that puts your king in check
-            if (!currentTurnKingIsChecked()) {
-                // remove captured piece if there is any
-                if (savedPiece != null) removeCapturedPieceFromTable(savedPiece);
-                // update piece location
-                if (currentTurn == 1) whitePieces[piece] = to;
-                else blackPieces[piece] = to;
-                changeTurn();
-            } else { // else move the pieces back
-                if (piece.getType() == "King") updateKingPosition(from);
-                board[from.Item1, from.Item2] = piece;
-                board[to.Item1, to.Item2] = savedPiece;
-            }
+            
+            // remove captured piece if there is any
+            if (savedPiece != null) removeCapturedPieceFromTable(savedPiece);
+            // update piece location
+            if (currentTurn == 1) whitePieces[piece] = to;
+            else blackPieces[piece] = to;
+            changeTurn();
+            updateGameStatus();
         }
         return;
+    }
+
+    public void updateGameStatus() {
+        bool kingIsChecked = currentTurnKingIsChecked();
+        if (existsLegalMove()) return;
+        else {
+            gameover = true;
+            if (kingIsChecked) {
+                if (currentTurn == 1) {
+                    gameConclusion = 0;
+                    Console.WriteLine("White won the game");
+                }
+                else {
+                    gameConclusion = 1;
+                    Console.WriteLine("Black won the game");
+                }
+            } 
+            else {
+                gameConclusion = 2;
+                Console.WriteLine("Stalemate");
+            }
+        }
+    }
+
+    public bool existsLegalMove() {
+        bool existsLegalMove = false;
+
+        Hashtable pieces;
+        if (currentTurn == 1) pieces = whitePieces;
+        else pieces = blackPieces;
+
+        for (int i = 1; i <= 8; i++) {
+            for (int j = 1; j <= 8; j++) {
+                foreach ((int, int) pieceLoc in pieces.Values) {
+                    if (isMoveLegal(pieceLoc, (i, j))) existsLegalMove = true;
+                }
+            }
+        }
+        return existsLegalMove;
     }
 
     public void updateKingPosition((int, int) pos) {
@@ -172,15 +227,32 @@ public class Game {
         if ((to.Item1 < 1 && 8 < to.Item1) || (to.Item2 < 1 && 8 < to.Item2)) return false; // cannot move outside the board
         if (currentTurn != piece.getSide()) return false; // cannot move opponents piece
         if (board[to.Item1, to.Item2] != null && board[to.Item1, to.Item2].getSide() == getTurn()) return false;
+
+        bool isLegal = true;
         switch (piece.getType()) {
-            case "King": return moveKingLegal(from, to);
-            case "Queen": return moveQueenLegal(from, to);
-            case "Bishop": return moveBishopLegal(from, to);
-            case "Knight": return moveKnightLegal(from, to);
-            case "Rook": return moveRookLegal(from, to);
-            case "Pawn": return movePawnLegal(from, to);
-            default: return false;
+            case "King": isLegal = moveKingLegal(from, to); break;
+            case "Queen": isLegal = moveQueenLegal(from, to); break;
+            case "Bishop": isLegal = moveBishopLegal(from, to); break;
+            case "Knight": isLegal = moveKnightLegal(from, to); break;
+            case "Rook": isLegal = moveRookLegal(from, to); break;
+            case "Pawn": isLegal = movePawnLegal(from, to); break;
+            default: isLegal = false; break;
         }
+
+        if (isLegal) { // check whether if the king is checked after move
+            Piece savedPiece = board[to.Item1, to.Item2];
+            board[to.Item1, to.Item2] = board[from.Item1, from.Item2];
+            board[from.Item1, from.Item2] = null;
+            if (piece.getType() == "King") updateKingPosition(to);
+            // you cannot make a move that puts your king in check
+            if (currentTurnKingIsChecked()) isLegal = false;
+        
+            // move the pieces back
+            if (piece.getType() == "King") updateKingPosition(from);
+            board[from.Item1, from.Item2] = piece;
+            board[to.Item1, to.Item2] = savedPiece;
+        }
+        return isLegal;
     }
 
     public void changeTurn() {

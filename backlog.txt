@@ -8,6 +8,6 @@ Where stuff to be done goes
 [/] move for king
 [/] isKingChecked
 [] perhaps swap coordinates...
-[] stale mate
-[] check mate
+[/] check mate
+[/] stale mate
 [] repeating moves...

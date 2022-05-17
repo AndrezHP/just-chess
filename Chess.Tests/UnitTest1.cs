@@ -369,4 +369,75 @@ public class UnitTest1 {
         bool pieceMoved = game.getBoard()[3, 2] != null;
         Assert.IsFalse(pieceMoved, "The pawn should not have moved from the king");
     }
+
+    [TestMethod]
+    public void WhiteWinsTheGame() {
+        Game game = new Game();
+        game.cleanBoard();
+
+        game.createAndSetPiece("King", 1, (1, 1));
+        game.createAndSetPiece("King", 0, (8, 8));
+        game.createAndSetPiece("Pawn", 1, (6, 6));
+        game.createAndSetPiece("Queen", 1, (2, 7));
+
+        bool isGameOver1 = game.isGameOver();
+        Assert.IsFalse(isGameOver1, "The game should not be over yet");
+
+        game.movePiece((2, 7), (7, 7));
+
+        bool isGameOver2 = game.isGameOver();
+
+        Assert.IsTrue(isGameOver2, "Game should have been over now");
+
+        bool whiteWon = game.getGameConclusion() == "White won";
+        Assert.IsTrue(whiteWon, "White should have won now");
+    }
+
+    [TestMethod]
+    public void BlackWinsTheGame() {
+        Game game = new Game();
+        game.cleanBoard();
+
+        game.changeTurn();
+
+        game.createAndSetPiece("King", 1, (1, 1));
+        game.createAndSetPiece("King", 0, (8, 8));
+        game.createAndSetPiece("Pawn", 0, (3, 3));
+        game.createAndSetPiece("Queen", 0, (7, 2));
+
+        bool isGameOver1 = game.isGameOver();
+        Assert.IsFalse(isGameOver1, "The game should not be over yet");
+
+        game.movePiece((7, 2), (2, 2));
+
+        bool isGameOver2 = game.isGameOver();
+
+        Assert.IsTrue(isGameOver2, "Game should have been over now");
+        
+        bool blackWon = game.getGameConclusion() == "Black won";
+        Assert.IsTrue(blackWon, "Black should have won now");
+    }
+
+    [TestMethod]
+    public void StaleMate() {
+        Game game = new Game();
+        game.cleanBoard();
+
+        game.createAndSetPiece("King", 1, (1, 1));
+        game.createAndSetPiece("King", 0, (8, 8));
+        game.createAndSetPiece("Pawn", 1, (6, 6));
+        game.createAndSetPiece("Rook", 1, (2, 7));
+
+        bool isGameOver1 = game.isGameOver();
+        Assert.IsFalse(isGameOver1, "The game should not be over yet");
+
+        game.movePiece((2, 7), (7, 7));
+
+        bool isGameOver2 = game.isGameOver();
+
+        Assert.IsTrue(isGameOver2, "Game should have been over now");
+
+        bool staleMate = game.getGameConclusion() == "Stalemate";
+        Assert.IsTrue(staleMate, "Should have been statemate now");
+    }
 }
